@@ -1,27 +1,16 @@
 import  express  from "express";
+import {deleteTasks, insertTask, updateTask} from "../models/task/TaskModel.js"
+import {getTasks} from "../models/task/TaskModel.js"
 const router = express.Router();
 
-//fake databse 
-let  fakeTaskTable = [
-    {
-        _id: 1,
-        task: "cooking",
-        hr: 4,
-        type : "entry"
-      },
-      {
-        _id: 2,
-        task: "Watching Tv",
-        hr: 4,
-        type : "bad"
-      }
-]
+ 
 
 // C(Create)receive new task and store in the database 
-router.post("/", (req, res)=>{
+router.post("/", async(req, res)=>{
     console.log(req.body);
 
-    fakeTaskTable.push(req.body);
+     const  result = insertTask(req.body);
+     console.log(result);
 
     res.json({ 
         status: "success",
@@ -29,49 +18,53 @@ router.post("/", (req, res)=>{
 });
 
 // R(Read) => read data from data base and return to the client
-router.get("/", (req, res)=>{
+router.get("/",async (req, res)=>{
+    // databae query to get all the task
+    const data = await getTasks();
     res.json({
         status: "sucess",
         message:"todo get method",
-        data:fakeTaskTable
+        data,
     });
 });
 // U(Update)=> update some information of existing data int he database and respond client acordingly
-router.put("/", (req, res)=>{
-    
-    const {_id,type} = req.body;
-    console.log(req.body);
+router.put("/", async (req, res)=>{
+        const {_id,type} = req.body;
+        console.log(req.body);
 
- fakeTaskTable.map((item)=>{
- if(item._id === _id){
-    item.type = type;
- }
- return item;
- });
+        
+        const result = await updateTask(_id, {type});
+        console.log(result)
 
-    res.json({
-        status :"sucess",
-        message:"todo get method"});
-});
-// D(Delete) => Delete data(s) from databse and response client accordingly
-router.delete("/:_id?", (req, res)=>{
-    const {_id} = req.params;
-    if (!_id){  
-        res.status(400).json({
-        status :"error",
-        message:"invaild request, id is missing"
-    });
-    return;
+     if( result?._id){
+            res.json({ status :"sucess",message:"todo get method"});
+        
 
+        } else{
+            
+            res.status(400).json({
+                status :"error",
+                message:"task has been deleted"
+
+        })
     }
-    console.log(req.params);
 
+    });
 
-    fakeTaskTable = fakeTaskTable.filter(item => item._id !=_id);
+// D(Delete) => Delete data(s) from databse and response client accordingly
+router.delete("/",async  (req, res)=>{
+const result = await deleteTasks(req.body)
+console.log(result);
 
+if( result?.deletedCount){
+    res.json({ status :"success",message:"The selected talk has been delete",
+});
+
+} else{
     res.json({
         status :"sucess",
-        message:"todo get method"});
+        message:"no thing delete"});
+    }
 });
 
 export default router;
